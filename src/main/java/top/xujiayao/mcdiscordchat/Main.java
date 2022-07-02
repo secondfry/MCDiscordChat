@@ -109,18 +109,10 @@ public class Main implements DedicatedServerModInitializer {
 
 			SERVER = server;
 
-			Utils.initCheckUpdateTimer();
+			Utils.onServerStarted();
 
-			if (CONFIG.generic.announceHighMspt) {
-				Utils.initMsptMonitor();
-			}
-
-			if (CONFIG.generic.updateChannelTopic) {
-				if (!CONFIG.multiServer.enable) {
-					Utils.initChannelTopicMonitor();
-				} else if (MULTI_SERVER.server != null) {
-					MULTI_SERVER.initMultiServerChannelTopicMonitor();
-				}
+			if (CONFIG.generic.updateChannelTopic && CONFIG.multiServer.enable && MULTI_SERVER.server != null) {
+				MULTI_SERVER.initMultiServerChannelTopicMonitor();
 			}
 		});
 

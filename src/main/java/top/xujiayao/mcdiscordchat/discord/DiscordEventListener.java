@@ -104,7 +104,7 @@ public class DiscordEventListener extends ListenerAdapter {
 					/log                 | 获取服务器最新日志（仅限管理员）
 					/stop                | 停止服务器（仅限管理员）
 					```""").queue();
-			case "update" -> e.getHook().sendMessage(Utils.checkUpdate(true)).queue();
+			case "update" -> e.getHook().sendMessage(Utils.getUpdateMessage(true)).queue();
 			case "stats" -> {
 				StringBuilder message = new StringBuilder()
 						.append("```\n=============== ")
@@ -184,12 +184,7 @@ public class DiscordEventListener extends ListenerAdapter {
 						Utils.updateBotCommands();
 
 						CHECK_UPDATE_TIMER = new Timer();
-						Utils.initCheckUpdateTimer();
-
 						MSPT_MONITOR_TIMER = new Timer();
-						if (CONFIG.generic.announceHighMspt) {
-							Utils.initMsptMonitor();
-						}
 
 						if (CONFIG.multiServer.enable) {
 							MULTI_SERVER = new MultiServer();
@@ -197,18 +192,16 @@ public class DiscordEventListener extends ListenerAdapter {
 						}
 
 						CHANNEL_TOPIC_MONITOR_TIMER = new Timer();
-						if (CONFIG.generic.updateChannelTopic) {
+						if (CONFIG.generic.updateChannelTopic && CONFIG.multiServer.enable && MULTI_SERVER.server != null) {
 							new Timer().schedule(new TimerTask() {
 								@Override
 								public void run() {
-									if (!CONFIG.multiServer.enable) {
-										Utils.initChannelTopicMonitor();
-									} else if (MULTI_SERVER.server != null) {
-										MULTI_SERVER.initMultiServerChannelTopicMonitor();
-									}
+									MULTI_SERVER.initMultiServerChannelTopicMonitor();
 								}
 							}, 2000);
 						}
+
+						Utils.onServerStarted();
 
 						e.getHook().sendMessage(CONFIG.generic.useEngInsteadOfChin ? "**Config file reloaded successfully!**" : "**配置文件重新加载成功！**").queue();
 					} catch (Exception ex) {

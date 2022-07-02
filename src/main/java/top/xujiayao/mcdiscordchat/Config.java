@@ -56,8 +56,10 @@ public class Config {
 
 		public List<String> adminsIds = new ArrayList<>();
 
-		// NOTE(secondfry): possible values "full", "short" and "disabled".
-		// Empty considered to be "disabled".
+		public boolean checkUpdateOnStart = false;
+		public boolean checkUpdatePeriodically = false;
+
+		// NOTE(secondfry): possible values "full" or whatever else (i.e. "short").
 		public String updateMessage = "short";
 	}
 
@@ -130,6 +132,5 @@ public class Config {
 	}
 
 	public String latestVersion = VERSION;
-	public long latestCheckTime = System.currentTimeMillis() - 300000000;
 }
 

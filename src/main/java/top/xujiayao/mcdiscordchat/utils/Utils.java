@@ -54,7 +54,7 @@ public class Utils {
 		return text.toString();
 	}
 
-	public static String checkUpdate(boolean isManualCheck) {
+	public static String getUpdateMessage(boolean isManualCheck) {
 		try {
 			Request request = new Request.Builder()
 					.url("https://cdn.jsdelivr.net/gh/Xujiayao/MCDiscordChat@master/update/version.json")
@@ -72,15 +72,6 @@ public class Utils {
 				ConfigManager.update();
 
 				if (!latestVersion.equals(VERSION)) {
-					if (CONFIG.latestVersion.equals(latestVersion)
-							&& CONFIG.latestCheckTime > (System.currentTimeMillis() - 172800000)
-							&& !isManualCheck) {
-						return "";
-					}
-
-					CONFIG.latestCheckTime = System.currentTimeMillis();
-					ConfigManager.update();
-
 					message.append(CONFIG.generic.useEngInsteadOfChin ? "**A new version is available!**" : "**新版本可用！**");
 					message.append("\n\n");
 					message.append("MCDiscordChat **").append(VERSION).append("** -> **").append(latestVersion).append("**");
@@ -110,6 +101,15 @@ public class Utils {
 			LOGGER.error(ExceptionUtils.getStackTrace(e));
 			return "";
 		}
+	}
+
+	public static void checkUpdate(boolean isManualCheck) {
+		String message = Utils.getUpdateMessage(isManualCheck);
+		if (message.isEmpty()) {
+			return;
+		}
+
+		CHANNEL.sendMessage(message).queue();
 	}
 
 	public static String getInfoCommandMessage() {
@@ -228,6 +228,10 @@ public class Utils {
 	}
 
 	public static void initMsptMonitor() {
+		if (!CONFIG.generic.announceHighMspt) {
+			return;
+		}
+
 		MSPT_MONITOR_TIMER.schedule(new TimerTask() {
 			@Override
 			public void run() {
@@ -248,6 +252,10 @@ public class Utils {
 	}
 
 	public static void initChannelTopicMonitor() {
+		if (!CONFIG.generic.updateChannelTopic || CONFIG.multiServer.enable) {
+			return;
+		}
+
 		CHANNEL_TOPIC_MONITOR_TIMER.schedule(new TimerTask() {
 			@Override
 			public void run() {
@@ -272,26 +280,14 @@ public class Utils {
 	}
 
 	public static void initCheckUpdateTimer() {
-		if (CONFIG.generic.updateMessage.isEmpty()) {
-			return;
-		}
-
-		if (CONFIG.generic.updateMessage.equals("disabled")) {
+		if (!CONFIG.generic.checkUpdatePeriodically) {
 			return;
 		}
 
 		CHECK_UPDATE_TIMER.schedule(new TimerTask() {
 			@Override
 			public void run() {
-				if (CONFIG.latestCheckTime > System.currentTimeMillis()) {
-					CONFIG.latestCheckTime = System.currentTimeMillis() - 300000000;
-					ConfigManager.update();
-				}
-
-				String message = checkUpdate(false);
-				if (!message.isEmpty()) {
-					CHANNEL.sendMessage(message).queue();
-				}
+				Utils.checkUpdate(false);
 			}
 		}, 3600000, 21600000);
 	}
@@ -322,5 +318,15 @@ public class Utils {
 		new Gson().fromJson(CONFIG.textsEN.formattedResponseMessage, Object.class);
 		new Gson().fromJson(CONFIG.textsEN.formattedChatMessage, Object.class);
 		new Gson().fromJson(CONFIG.textsEN.formattedOtherMessage, Object.class);
+	}
+
+	public static void onServerStarted() {
+		if (CONFIG.generic.checkUpdateOnStart) {
+			Utils.checkUpdate(false);
+		}
+
+		Utils.initCheckUpdateTimer();
+		Utils.initMsptMonitor();
+		Utils.initChannelTopicMonitor();
 	}
 }
